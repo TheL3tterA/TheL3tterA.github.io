@@ -1,9 +1,413 @@
-<!doctype html>
-<html>
-  <head>
-    <title>This is the title of the webpage!</title>
-  </head>
-  <body>
-    <p>This is an example paragraph. Anything in the <strong>body</strong> tag will appear on the page, just like this <strong>p</strong> tag and its contents.</p>
-  </body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garden Gnome Defender (Canvas)</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #87CEEB; /* Sky blue */
+            font-family: 'Inter', Arial, sans-serif; /* Using Inter font */
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            position: relative; /* Needed for absolute positioning of game-over */
+        }
+        #game-container {
+            position: relative;
+            border: 5px solid #4B3621; /* Dirt brown */
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            background-color: #6B8E23; /* Garden green background */
+            border-radius: 15px; /* Rounded corners for the container */
+            overflow: hidden; /* Hide anything drawn outside the canvas */
+        }
+        canvas {
+            display: block;
+            background-color: transparent; /* Canvas background will be drawn by JS */
+        }
+        #score-board, #lives-board {
+            position: absolute;
+            top: 10px;
+            padding: 8px 15px;
+            background-color: rgba(255, 255, 255, 0.85);
+            border-radius: 8px; /* Rounded corners */
+            font-weight: bold;
+            font-size: 1.1em;
+            z-index: 10; /* Ensure text is above canvas */
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        }
+        #score-board {
+            left: 10px;
+        }
+        #lives-board {
+            right: 10px;
+        }
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8); /* Darker overlay */
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.8em;
+            text-align: center;
+            z-index: 20;
+            display: none; /* Hidden initially */
+            border-radius: 15px; /* Match container border-radius */
+        }
+        #game-over button {
+            padding: 18px 35px;
+            font-size: 0.6em;
+            margin-top: 25px;
+            cursor: pointer;
+            background-color: #4CAF50; /* Green button */
+            color: white;
+            border: none;
+            border-radius: 12px; /* More rounded */
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        #game-over button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px); /* Slight lift on hover */
+        }
+        #game-over button:active {
+            transform: translateY(0); /* Press effect */
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="score-board">Score: 0</div>
+        <div id="lives-board">Lives: 5</div>
+        <div id="game-over">
+            GAME OVER!
+            <div id="final-score" style="font-size: 0.6em; margin-top: 10px;"></div>
+            <button id="restart-button">Play Again?</button>
+        </div>
+    </div>
+
+    <script>
+        // Get the canvas element and its 2D rendering context
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Get score, lives, and game over display elements
+        const scoreBoard = document.getElementById('score-board');
+        const livesBoard = document.getElementById('lives-board');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const restartButton = document.getElementById('restart-button');
+
+        // Game dimensions (will be set to canvas size)
+        const GAME_WIDTH = 800;
+        const GAME_HEIGHT = 600;
+
+        // Game state variables
+        let playerScore = 0;
+        let playerLives = 5;
+        let gameActive = true;
+        let lastGnomeSpawnTime = 0;
+
+        // Player properties
+        const player = {
+            width: 60,
+            height: 80,
+            x: GAME_WIDTH / 2 - 30, // Centered initially
+            y: GAME_HEIGHT - 100, // Positioned near the bottom
+            speed: 8,
+            isKicking: false,
+            kickDuration: 200, // ms
+            kickTimer: 0,
+            color: '#008080' // Teal
+        };
+
+        // Gnome properties (base values)
+        const gnomeDefaults = {
+            width: 45,
+            height: 70,
+            speedMultiplier: 0.5,
+            spawnInterval: 2000, // ms between spawns
+            minSpawnInterval: 500 // ms
+        };
+
+        let currentGnomeSpawnInterval = gnomeDefaults.spawnInterval;
+        const gnomes = []; // Array to store active gnomes
+
+        // Portal properties
+        const portal = {
+            width: 120,
+            height: 60,
+            x: GAME_WIDTH / 2 - 60,
+            y: GAME_HEIGHT - 30,
+            color: '#8A2BE2' // Purple
+        };
+
+        /**
+         * Initializes canvas dimensions to fit the game width/height.
+         */
+        function setCanvasDimensions() {
+            canvas.width = GAME_WIDTH;
+            canvas.height = GAME_HEIGHT;
+        }
+
+        /**
+         * Draws the game background (sky and garden).
+         */
+        function drawBackground() {
+            // Garden ground
+            ctx.fillStyle = '#6B8E23'; // Garden green
+            ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        }
+
+        /**
+         * Draws the player character on the canvas.
+         */
+        function drawPlayer() {
+            // Player body
+            ctx.fillStyle = player.isKicking ? '#FF4500' : player.color; // Change color when kicking
+            ctx.fillRect(player.x, player.y + 10, player.width, player.height - 10);
+            ctx.beginPath();
+            ctx.roundRect(player.x, player.y + 10, player.width, player.height - 10, 8);
+            ctx.fill();
+
+            // Player hat (triangle)
+            ctx.fillStyle = '#1E90FF'; // Blue hat
+            ctx.beginPath();
+            ctx.moveTo(player.x + player.width / 2, player.y);
+            ctx.lineTo(player.x, player.y + 20);
+            ctx.lineTo(player.x + player.width, player.y + 20);
+            ctx.closePath();
+            ctx.fill();
+
+            // Player character emoji
+            ctx.font = '40px Arial'; // Larger font for emoji
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('👨‍🌾', player.x + player.width / 2, player.y + player.height / 2 + 10);
+        }
+
+        /**
+         * Draws a single gnome on the canvas.
+         * @param {object} gnome - The gnome object to draw.
+         */
+        function drawGnome(gnome) {
+            // Gnome body
+            ctx.fillStyle = '#8B4513'; // Brown body
+            ctx.beginPath();
+            ctx.roundRect(gnome.x, gnome.y + 15, gnome.width, gnome.height - 15, 8);
+            ctx.fill();
+
+            // Gnome hat (triangle)
+            ctx.fillStyle = '#B22222'; // Red hat
+            ctx.beginPath();
+            ctx.moveTo(gnome.x + gnome.width / 2, gnome.y);
+            ctx.lineTo(gnome.x, gnome.y + 20);
+            ctx.lineTo(gnome.x + gnome.width, gnome.y + 20);
+            ctx.closePath();
+            ctx.fill();
+
+            // Gnome character emoji (using elf/gnome emoji)
+            ctx.font = '35px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🧝‍♀️', gnome.x + gnome.width / 2, gnome.y + gnome.height / 2 + 10);
+        }
+
+        /**
+         * Draws the portal at the bottom of the screen.
+         */
+        function drawPortal() {
+            ctx.fillStyle = portal.color;
+            ctx.shadowColor = '#DA70D6'; // Glow color
+            ctx.shadowBlur = 25; // Glow intensity
+            ctx.beginPath();
+            ctx.ellipse(portal.x + portal.width / 2, portal.y + portal.height / 2, portal.width / 2, portal.height / 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0; // Reset shadow
+        }
+
+        /**
+         * Updates the score displayed on the scoreboard.
+         * @param {number} points - Points to add/subtract.
+         */
+        function updateScore(points) {
+            playerScore += points;
+            scoreBoard.textContent = `Score: ${playerScore}`;
+        }
+
+        /**
+         * Updates the lives displayed on the lives board.
+         * @param {number} change - Change in lives (-1 for losing a life).
+         */
+        function updateLives(change) {
+            playerLives += change;
+            livesBoard.textContent = `Lives: ${playerLives}`;
+            if (playerLives <= 0) {
+                endGame();
+            }
+        }
+
+        /**
+         * Spawns a new gnome at a random X position at the top of the screen.
+         */
+        function spawnGnome() {
+            if (!gameActive) return;
+
+            const newGnome = {
+                x: Math.random() * (GAME_WIDTH - gnomeDefaults.width),
+                y: -gnomeDefaults.height, // Start above the canvas
+                width: gnomeDefaults.width,
+                height: gnomeDefaults.height,
+                speed: (1 + playerScore / 150) * gnomeDefaults.speedMultiplier, // Gnomes get faster with score
+                kicked: false,
+                kickedTimer: 0 // Timer for kicked animation
+            };
+            gnomes.push(newGnome);
+        }
+
+        /**
+         * Main game loop function. Updates game state and redraws everything.
+         * @param {DOMHighResTimeStamp} currentTime - The current time provided by requestAnimationFrame.
+         */
+        function gameLoop(currentTime) {
+            if (!gameActive) return;
+
+            // Clear the canvas
+            ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+            // Draw background elements
+            drawBackground();
+            drawPortal();
+
+            // Handle gnome spawning
+            if (currentTime - lastGnomeSpawnTime > currentGnomeSpawnInterval) {
+                spawnGnome();
+                lastGnomeSpawnTime = currentTime;
+                // Gradually increase difficulty by reducing spawn interval
+                if (currentGnomeSpawnInterval > gnomeDefaults.minSpawnInterval) {
+                    currentGnomeSpawnInterval -= 2; // Decrease by a small amount
+                }
+            }
+
+            // Update and draw gnomes
+            gnomes.forEach((gnome, index) => {
+                if (gnome.kicked) {
+                    // Animate kicked gnomes flying up and shrinking
+                    gnome.y -= gnome.speed * 2; // Fly up faster
+                    gnome.width *= 0.98; // Shrink
+                    gnome.height *= 0.98; // Shrink
+                    gnome.kickedTimer += 1;
+                    if (gnome.kickedTimer > 30) { // After 30 frames of flying, remove
+                        gnomes.splice(index, 1);
+                        return; // Skip drawing this gnome as it's removed
+                    }
+                } else {
+                    gnome.y += gnome.speed; // Move gnome downwards
+                }
+
+                drawGnome(gnome);
+
+                // Check if gnome went past the player (off-screen bottom)
+                if (gnome.y > GAME_HEIGHT) {
+                    if (!gnome.kicked) { // Only lose life if not kicked
+                        updateLives(-1);
+                    }
+                    gnomes.splice(index, 1); // Remove gnome
+                }
+
+                // Collision detection: player vs. gnome
+                if (
+                    player.isKicking &&
+                    gnome.y + gnome.height > player.y && // Gnome bottom is below player top
+                    gnome.y < player.y + player.height && // Gnome top is above player bottom
+                    gnome.x + gnome.width > player.x && // Gnome right is past player left
+                    gnome.x < player.x + player.width // Gnome left is past player right
+                ) {
+                    if (!gnome.kicked) {
+                        gnome.kicked = true;
+                        updateScore(10); // Score for kicking
+                        // No need to remove immediately, it will fly up and then be removed
+                    }
+                }
+            });
+
+            // Update player kicking state
+            if (player.isKicking) {
+                player.kickTimer += 1000 / 60; // Assuming 60 FPS
+                if (player.kickTimer >= player.kickDuration) {
+                    player.isKicking = false;
+                    player.kickTimer = 0;
+                }
+            }
+
+            // Draw the player
+            drawPlayer();
+
+            requestAnimationFrame(gameLoop); // Request next frame
+        }
+
+        /**
+         * Initializes the game state and starts the game.
+         */
+        function startGame() {
+            setCanvasDimensions(); // Set canvas size
+            playerScore = 0;
+            playerLives = 5;
+            player.x = GAME_WIDTH / 2 - player.width / 2; // Reset player position
+            gnomes.length = 0; // Clear all gnomes
+            updateScore(0); // Reset score display
+            updateLives(0); // Reset lives display
+            gameOverScreen.style.display = 'none'; // Hide game over screen
+            gameActive = true;
+            currentGnomeSpawnInterval = gnomeDefaults.spawnInterval; // Reset spawn interval
+            lastGnomeSpawnTime = performance.now(); // Initialize spawn timer
+
+            requestAnimationFrame(gameLoop); // Start the game loop
+        }
+
+        /**
+         * Ends the game, displays final score and restart button.
+         */
+        function endGame() {
+            gameActive = false;
+            finalScoreDisplay.textContent = `Your Final Score: ${playerScore}`;
+            gameOverScreen.style.display = 'flex'; // Show game over screen
+        }
+
+        // --- Event Listeners ---
+        document.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+
+            if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') {
+                player.x = Math.max(0, player.x - player.speed);
+            } else if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') {
+                player.x = Math.min(GAME_WIDTH - player.width, player.x + player.speed);
+            } else if (e.key === ' ' && !player.isKicking) {
+                player.isKicking = true;
+                player.kickTimer = 0; // Reset kick timer
+            }
+        });
+
+        restartButton.addEventListener('click', startGame);
+
+        // Start the game when the window loads
+        window.onload = function() {
+            startGame();
+        };
+    </script>
+</body>
 </html>
