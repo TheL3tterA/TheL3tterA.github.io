@@ -136,6 +136,8 @@
             display: none;
             padding: 20px;
             box-sizing: border-box;
+            max-height: 90vh; /* Set a max height */
+            overflow-y: auto; /* Enable vertical scrolling */
         }
         #debug-overlay { /* Hidden initially */
             display: none;
@@ -860,52 +862,52 @@
         // --- END SHOP FUNCTIONS ---
 
 
-        // --- DEBUG MENU FUNCTIONS ---
-        /**
-         * Opens the debug overlay and pauses the game.
-         */
-        function openDebug() {
-            gamePaused = true;
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-            }
-            debugOverlay.style.display = 'flex';
-            shopButton.style.display = 'none'; // Hide shop button
-            debugButton.style.display = 'none'; // Hide debug button
-            fireballCooldownTimerDisplay.style.display = 'none'; // Hide timer when debug is open
+        // // --- DEBUG MENU FUNCTIONS ---
+        // /**
+        //  * Opens the debug overlay and pauses the game.
+        //  */
+        // function openDebug() {
+        //     gamePaused = true;
+        //     if (animationFrameId) {
+        //         cancelAnimationFrame(animationFrameId);
+        //     }
+        //     debugOverlay.style.display = 'flex';
+        //     shopButton.style.display = 'none'; // Hide shop button
+        //     debugButton.style.display = 'none'; // Hide debug button
+        //     fireballCooldownTimerDisplay.style.display = 'none'; // Hide timer when debug is open
 
-            // Populate debug inputs with current values
-            debugPlayerSpeedInput.value = player.speed;
-            debugPlayerSpeedValue.textContent = player.speed;
-            debugPlayerLivesInput.value = playerLives;
-            debugPlayerMoneyInput.value = playerMoney;
-            debugGnomeSpeedInput.value = gnomeDefaults.speedMultiplier;
-            debugGnomeSpeedValue.textContent = gnomeDefaults.speedMultiplier;
-            debugGnomeSpawnIntervalInput.value = gnomeDefaults.spawnInterval;
-            debugGnomeSpawnIntervalValue.textContent = gnomeDefaults.spawnInterval;
-            debugGnomeMinSpawnIntervalInput.value = gnomeDefaults.minSpawnInterval;
-            debugGnomeMinSpawnIntervalValue.textContent = gnomeDefaults.minSpawnInterval;
+        //     // Populate debug inputs with current values
+        //     debugPlayerSpeedInput.value = player.speed;
+        //     debugPlayerSpeedValue.textContent = player.speed;
+        //     debugPlayerLivesInput.value = playerLives;
+        //     debugPlayerMoneyInput.value = playerMoney;
+        //     debugGnomeSpeedInput.value = gnomeDefaults.speedMultiplier;
+        //     debugGnomeSpeedValue.textContent = gnomeDefaults.speedMultiplier;
+        //     debugGnomeSpawnIntervalInput.value = gnomeDefaults.spawnInterval;
+        //     debugGnomeSpawnIntervalValue.textContent = gnomeDefaults.spawnInterval;
+        //     debugGnomeMinSpawnIntervalInput.value = gnomeDefaults.minSpawnInterval;
+        //     debugGnomeMinSpawnIntervalValue.textContent = gnomeDefaults.minSpawnInterval;
 
-            animationFrameId = requestAnimationFrame(gameLoop); // Continue drawing paused state
-        }
+        //     animationFrameId = requestAnimationFrame(gameLoop); // Continue drawing paused state
+        // }
 
-        /**
-         * Closes the debug overlay and resumes the game.
-         */
-        function closeDebug() {
-            gamePaused = false;
-            debugOverlay.style.display = 'none';
-            shopButton.style.display = 'block';
-            debugButton.style.display = 'block';
-            if (player.hasFireball) { // Show timer again if fireball purchased
-                 fireballCooldownTimerDisplay.style.display = 'block';
-            }
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-            }
-            animationFrameId = requestAnimationFrame(gameLoop);
-        }
-        // --- END DEBUG MENU FUNCTIONS ---
+        // /**
+        //  * Closes the debug overlay and resumes the game.
+        //  */
+        // function closeDebug() {
+        //     gamePaused = false;
+        //     debugOverlay.style.display = 'none';
+        //     shopButton.style.display = 'block';
+        //     debugButton.style.display = 'block';
+        //     if (player.hasFireball) { // Show timer again if fireball purchased
+        //          fireballCooldownTimerDisplay.style.display = 'block';
+        //     }
+        //     if (animationFrameId) {
+        //         cancelAnimationFrame(animationFrameId);
+        //     }
+        //     animationFrameId = requestAnimationFrame(gameLoop);
+        // }
+        // // --- END DEBUG MENU FUNCTIONS ---
 
         // --- FIREBALL COOLDOWN TIMER DISPLAY ---
         /**
