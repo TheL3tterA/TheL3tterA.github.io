@@ -156,6 +156,15 @@
             color: '#8A2BE2' // Purple
         };
 
+        // Object to track pressed keys for fluid movement
+        const keys = {
+            ArrowLeft: false,
+            a: false,
+            ArrowRight: false,
+            d: false,
+            ' ': false // Spacebar for kicking
+        };
+
         /**
          * Initializes canvas dimensions to fit the game width/height.
          */
@@ -179,7 +188,6 @@
         function drawPlayer() {
             // Player body
             ctx.fillStyle = player.isKicking ? '#FF4500' : player.color; // Change color when kicking
-            ctx.fillRect(player.x, player.y + 10, player.width, player.height - 10);
             ctx.beginPath();
             ctx.roundRect(player.x, player.y + 10, player.width, player.height - 10, 8);
             ctx.fill();
@@ -293,6 +301,14 @@
             drawBackground();
             drawPortal();
 
+            // Handle player movement based on pressed keys
+            if (keys.ArrowLeft || keys.a) {
+                player.x = Math.max(0, player.x - player.speed);
+            }
+            if (keys.ArrowRight || keys.d) {
+                player.x = Math.min(GAME_WIDTH - player.width, player.x + player.speed);
+            }
+
             // Handle gnome spawning
             if (currentTime - lastGnomeSpawnTime > currentGnomeSpawnInterval) {
                 spawnGnome();
@@ -332,16 +348,15 @@
                 // Collision detection: player vs. gnome
                 if (
                     player.isKicking &&
+                    !gnome.kicked && // Only collide with gnomes that haven't been kicked yet
                     gnome.y + gnome.height > player.y && // Gnome bottom is below player top
                     gnome.y < player.y + player.height && // Gnome top is above player bottom
                     gnome.x + gnome.width > player.x && // Gnome right is past player left
                     gnome.x < player.x + player.width // Gnome left is past player right
                 ) {
-                    if (!gnome.kicked) {
-                        gnome.kicked = true;
-                        updateScore(10); // Score for kicking
-                        // No need to remove immediately, it will fly up and then be removed
-                    }
+                    gnome.kicked = true;
+                    updateScore(10); // Score for kicking
+                    // No need to remove immediately, it will fly up and then be removed
                 }
             });
 
@@ -376,6 +391,11 @@
             currentGnomeSpawnInterval = gnomeDefaults.spawnInterval; // Reset spawn interval
             lastGnomeSpawnTime = performance.now(); // Initialize spawn timer
 
+            // Reset keys state
+            for (let key in keys) {
+                keys[key] = false;
+            }
+
             requestAnimationFrame(gameLoop); // Start the game loop
         }
 
@@ -392,13 +412,32 @@
         document.addEventListener('keydown', (e) => {
             if (!gameActive) return;
 
+            // Set key state to true when pressed
             if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') {
-                player.x = Math.max(0, player.x - player.speed);
+                keys.ArrowLeft = true;
+                keys.a = true;
             } else if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') {
-                player.x = Math.min(GAME_WIDTH - player.width, player.x + player.speed);
+                keys.ArrowRight = true;
+                keys.d = true;
             } else if (e.key === ' ' && !player.isKicking) {
+                keys[' '] = true; // Mark spacebar as pressed
                 player.isKicking = true;
                 player.kickTimer = 0; // Reset kick timer
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (!gameActive) return;
+
+            // Set key state to false when released
+            if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') {
+                keys.ArrowLeft = false;
+                keys.a = false;
+            } else if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') {
+                keys.ArrowRight = false;
+                keys.d = false;
+            } else if (e.key === ' ') {
+                keys[' '] = false; // Mark spacebar as released
             }
         });
 
