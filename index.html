@@ -52,11 +52,9 @@
             top: 10px;
         }
 
-        #shop-button {
+        #shop-button, #debug-button { /* Added debug-button to the common style */
             position: absolute;
             top: 60px;
-            left: 50%; /* Centered again */
-            transform: translateX(-50%);
             padding: 10px 25px;
             font-size: 1.2em;
             cursor: pointer;
@@ -69,6 +67,10 @@
             letter-spacing: 1px;
             text-transform: uppercase;
             z-index: 10;
+        }
+        #shop-button {
+            left: 30%; /* Position Shop button */
+            transform: translateX(-50%);
             background-color: #FFA500; /* Orange */
         }
         #shop-button:hover {
@@ -76,6 +78,19 @@
             transform: translateX(-50%) translateY(-2px);
         }
         #shop-button:active {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        #debug-button { /* Debug button specific styles */
+            left: 70%; /* Position Debug button */
+            transform: translateX(-50%);
+            background-color: #008000; /* Dark Green for Debug */
+        }
+        #debug-button:hover {
+            background-color: #006400;
+            transform: translateX(-50%) translateY(-2px);
+        }
+        #debug-button:active {
             transform: translateX(-50%) translateY(0);
         }
 
@@ -97,7 +112,7 @@
         }
 
 
-        #game-over, #shop-overlay {
+        #game-over, #shop-overlay, #debug-overlay { /* Added debug-overlay */
             position: absolute;
             top: 0;
             left: 0;
@@ -124,12 +139,19 @@
             max-height: 90vh; /* Set a max height */
             overflow-y: auto; /* Enable vertical scrolling */
         }
-        #shop-overlay h2 {
+        #debug-overlay { /* Hidden initially */
+            display: none;
+            padding: 20px;
+            box-sizing: border-box;
+            max-height: 90vh; /* Set a max height */
+            overflow-y: auto; /* Enable vertical scrolling */
+        }
+        #shop-overlay h2, #debug-overlay h2 { /* Added debug-overlay */
             font-size: 1.5em;
             margin-bottom: 20px;
             color: #FFD700; /* Gold */
         }
-        #shop-money {
+        #shop-money, .debug-section { /* Added debug-section */
             font-size: 1.2em;
             margin-bottom: 30px;
             width: 80%;
@@ -139,6 +161,39 @@
             padding: 20px;
             box-sizing: border-box;
         }
+        .debug-section label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.5em; /* Adjust font size relative to debug-section */
+            text-align: left;
+            padding-left: 5px;
+        }
+        .debug-section input[type="number"],
+        .debug-section input[type="range"] {
+            width: calc(100% - 10px);
+            padding: 8px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: rgba(255, 255, 255, 0.9);
+            font-size: 0.4em; /* Adjust font size relative to debug-section */
+            color: #333;
+        }
+        .debug-section button {
+            padding: 10px 20px;
+            font-size: 0.45em; /* Adjust font size relative to debug-section */
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin: 5px;
+        }
+        .debug-section button:hover {
+            background-color: #45a049;
+        }
+
 
         .shop-item {
             background-color: rgba(255, 255, 255, 0.1);
@@ -170,7 +225,7 @@
             background-color: #888;
             cursor: not-allowed;
         }
-        #close-shop-button {
+        #close-shop-button, #close-debug-button { /* Added debug close button */
             padding: 15px 30px;
             font-size: 0.6em;
             margin-top: 40px;
@@ -185,11 +240,11 @@
             letter-spacing: 1px;
             text-transform: uppercase;
         }
-        #close-shop-button:hover {
+        #close-shop-button:hover, #close-debug-button:hover {
             background-color: #B22222;
             transform: translateY(-2px);
         }
-        #close-shop-button:active {
+        #close-shop-button:active, #close-debug-button:active {
             transform: translateY(0);
         }
         /* Style for restart button */
@@ -224,7 +279,8 @@
         <div id="lives-board">Lives: 5</div>
         <div id="money-board">Money: $0</div>
         <button id="shop-button">Shop</button>
-        <div id="fireball-cooldown-timer"></div> <!-- New: Fireball Cooldown Timer Display -->
+        <button id="debug-button">Debug</button> <!-- Debug Button -->
+        <div id="fireball-cooldown-timer"></div> <!-- Fireball Cooldown Timer Display -->
 
         <div id="game-over">
             GAME OVER!
@@ -249,9 +305,50 @@
             </div>
             <button id="close-shop-button">Close Shop</button>
         </div>
+
+        <!-- DEBUG MENU OVERLAY -->
+        <div id="debug-overlay">
+            <h2>Debug Menu</h2>
+            <div class="debug-section">
+                <label for="debug-player-speed">Player Speed:</label>
+                <input type="range" id="debug-player-speed" min="1" max="20" step="1">
+                <span id="debug-player-speed-value"></span>
+
+                <label for="debug-player-lives">Lives:</label>
+                <input type="number" id="debug-player-lives" min="0" max="99">
+                <button id="add-life-button">Add Life (+1)</button>
+
+                <label for="debug-player-money">Money:</label>
+                <input type="number" id="debug-player-money" min="0" max="9999">
+                <button id="add-money-button">Add Money (+10)</button>
+            </div>
+
+            <div class="debug-section">
+                <label for="debug-gnome-speed">Gnome Base Speed Multiplier:</label>
+                <input type="range" id="debug-gnome-speed" min="0.1" max="2.0" step="0.1">
+                <span id="debug-gnome-speed-value"></span>
+
+                <label for="debug-gnome-spawn-interval">Gnome Spawn Interval (ms):</label>
+                <input type="range" id="debug-gnome-spawn-interval" min="100" max="5000" step="100">
+                <span id="debug-gnome-spawn-interval-value"></span>
+
+                <label for="debug-gnome-min-spawn-interval">Min Gnome Spawn Interval (ms):</label>
+                <input type="range" id="debug-gnome-min-spawn-interval" min="50" max="1000" step="50">
+                <span id="debug-gnome-min-spawn-interval-value"></span>
+
+                <button id="spawn-gnome-button">Spawn Gnome Now</button>
+            </div>
+
+            <button id="close-debug-button">Close Debug Menu</button>
+        </div>
     </div>
 
     <script>
+        // === DEBUG TOGGLE ===
+        // Set this to `true` to enable the debug menu, `false` to disable it.
+        const DEBUG_MODE_ENABLED = false;
+        // ====================
+
         // Get the canvas element and its 2D rendering context
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -267,13 +364,43 @@
         const shopOverlay = document.getElementById('shop-overlay');
         const currentShopMoneyDisplay = document.getElementById('current-shop-money');
         const closeShopButton = document.getElementById('close-shop-button');
-        const fireballCooldownTimerDisplay = document.getElementById('fireball-cooldown-timer'); // New: Fireball timer display
+        const fireballCooldownTimerDisplay = document.getElementById('fireball-cooldown-timer');
 
 
         // Shop upgrade buttons
         const buySpeedUpgradeButton = document.getElementById('buy-speed-upgrade');
         const buyFireballUpgradeButton = document.getElementById('buy-fireball-upgrade');
         const buyExtraLifeButton = document.getElementById('buy-extra-life');
+
+
+        // --- DEBUG MENU ELEMENTS (Conditionally retrieved) ---
+        let debugButton, debugOverlay, closeDebugButton, debugPlayerSpeedInput, debugPlayerSpeedValue,
+            debugPlayerLivesInput, addLifeButton, debugPlayerMoneyInput, addMoneyButton,
+            debugGnomeSpeedInput, debugGnomeSpeedValue, debugGnomeSpawnIntervalInput,
+            debugGnomeSpawnIntervalValue, debugGnomeMinSpawnIntervalInput,
+            debugGnomeMinSpawnIntervalValue, spawnGnomeButton;
+
+        if (DEBUG_MODE_ENABLED) {
+            debugButton = document.getElementById('debug-button');
+            debugOverlay = document.getElementById('debug-overlay');
+            closeDebugButton = document.getElementById('close-debug-button');
+
+            debugPlayerSpeedInput = document.getElementById('debug-player-speed');
+            debugPlayerSpeedValue = document.getElementById('debug-player-speed-value');
+            debugPlayerLivesInput = document.getElementById('debug-player-lives');
+            addLifeButton = document.getElementById('add-life-button');
+            debugPlayerMoneyInput = document.getElementById('debug-player-money');
+            addMoneyButton = document.getElementById('add-money-button');
+
+            debugGnomeSpeedInput = document.getElementById('debug-gnome-speed');
+            debugGnomeSpeedValue = document.getElementById('debug-gnome-speed-value');
+            debugGnomeSpawnIntervalInput = document.getElementById('debug-gnome-spawn-interval');
+            debugGnomeSpawnIntervalValue = document.getElementById('debug-gnome-spawn-interval-value');
+            debugGnomeMinSpawnIntervalInput = document.getElementById('debug-gnome-min-spawn-interval');
+            debugGnomeMinSpawnIntervalValue = document.getElementById('debug-gnome-min-spawn-interval-value');
+            spawnGnomeButton = document.getElementById('spawn-gnome-button');
+        }
+        // --- END DEBUG MENU ELEMENTS ---
 
 
         // Game dimensions
@@ -285,7 +412,7 @@
         let playerLives = 5;
         let playerMoney = 0;
         let gameActive = true;
-        let gamePaused = false; // New pause state for shop
+        let gamePaused = false; // New pause state for shop/debug
         let lastGnomeSpawnTime = 0;
         let animationFrameId; // To store the ID of the current requestAnimationFrame
 
@@ -724,6 +851,7 @@
             currentShopMoneyDisplay.textContent = playerMoney;
             updateShopButtonStates(); // Update button states when opening shop
             shopButton.style.display = 'none';
+            if (DEBUG_MODE_ENABLED) debugButton.style.display = 'none'; // Hide debug button too
             fireballCooldownTimerDisplay.style.display = 'none'; // Hide timer when shop is open
             animationFrameId = requestAnimationFrame(gameLoop);
         }
@@ -735,6 +863,7 @@
             gamePaused = false;
             shopOverlay.style.display = 'none';
             shopButton.style.display = 'block';
+            if (DEBUG_MODE_ENABLED) debugButton.style.display = 'block'; // Show debug button again
             if (player.hasFireball) { // Show timer again if fireball purchased
                  fireballCooldownTimerDisplay.style.display = 'block';
             }
@@ -744,6 +873,105 @@
             animationFrameId = requestAnimationFrame(gameLoop);
         }
         // --- END SHOP FUNCTIONS ---
+
+
+        // --- DEBUG MENU FUNCTIONS ---
+        // These functions are only used if DEBUG_MODE_ENABLED is true
+        if (DEBUG_MODE_ENABLED) {
+            /**
+             * Opens the debug overlay and pauses the game.
+             */
+            function openDebug() {
+                gamePaused = true;
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                }
+                debugOverlay.style.display = 'flex';
+                shopButton.style.display = 'none'; // Hide shop button
+                debugButton.style.display = 'none'; // Hide debug button
+                fireballCooldownTimerDisplay.style.display = 'none'; // Hide timer when debug is open
+
+                // Populate debug inputs with current values
+                debugPlayerSpeedInput.value = player.speed;
+                debugPlayerSpeedValue.textContent = player.speed;
+                debugPlayerLivesInput.value = playerLives;
+                debugPlayerMoneyInput.value = playerMoney;
+                debugGnomeSpeedInput.value = gnomeDefaults.speedMultiplier;
+                debugGnomeSpeedValue.textContent = gnomeDefaults.speedMultiplier;
+                debugGnomeSpawnIntervalInput.value = gnomeDefaults.spawnInterval;
+                debugGnomeSpawnIntervalValue.textContent = gnomeDefaults.spawnInterval;
+                debugGnomeMinSpawnIntervalInput.value = gnomeDefaults.minSpawnInterval;
+                debugGnomeMinSpawnIntervalValue.textContent = gnomeDefaults.minSpawnInterval;
+
+                animationFrameId = requestAnimationFrame(gameLoop); // Continue drawing paused state
+            }
+
+            /**
+             * Closes the debug overlay and resumes the game.
+             */
+            function closeDebug() {
+                gamePaused = false;
+                debugOverlay.style.display = 'none';
+                shopButton.style.display = 'block';
+                debugButton.style.display = 'block';
+                if (player.hasFireball) { // Show timer again if fireball purchased
+                    fireballCooldownTimerDisplay.style.display = 'block';
+                }
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                }
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+
+            // --- DEBUG MENU EVENT LISTENERS ---
+            debugButton.addEventListener('click', openDebug);
+            closeDebugButton.addEventListener('click', closeDebug);
+
+            debugPlayerSpeedInput.addEventListener('input', (e) => {
+                player.speed = parseFloat(e.target.value);
+                debugPlayerSpeedValue.textContent = player.speed;
+            });
+
+            debugPlayerLivesInput.addEventListener('change', (e) => {
+                playerLives = parseInt(e.target.value);
+                updateLives(0); // Update display, no change in value
+            });
+            addLifeButton.addEventListener('click', () => {
+                updateLives(1);
+                debugPlayerLivesInput.value = playerLives;
+            });
+
+            debugPlayerMoneyInput.addEventListener('change', (e) => {
+                playerMoney = parseInt(e.target.value);
+                updateMoney(0); // Update display, no change in value
+            });
+            addMoneyButton.addEventListener('click', () => {
+                updateMoney(10);
+                debugPlayerMoneyInput.value = playerMoney;
+            });
+
+            debugGnomeSpeedInput.addEventListener('input', (e) => {
+                gnomeDefaults.speedMultiplier = parseFloat(e.target.value);
+                debugGnomeSpeedValue.textContent = gnomeDefaults.speedMultiplier;
+            });
+
+            debugGnomeSpawnIntervalInput.addEventListener('input', (e) => {
+                gnomeDefaults.spawnInterval = parseInt(e.target.value);
+                currentGnomeSpawnInterval = gnomeDefaults.spawnInterval; // Also update current interval
+                debugGnomeSpawnIntervalValue.textContent = gnomeDefaults.spawnInterval;
+            });
+
+            debugGnomeMinSpawnIntervalInput.addEventListener('input', (e) => {
+                gnomeDefaults.minSpawnInterval = parseInt(e.target.value);
+                debugGnomeMinSpawnIntervalValue.textContent = gnomeDefaults.minSpawnInterval;
+            });
+
+            spawnGnomeButton.addEventListener('click', () => {
+                spawnGnome();
+            });
+            // --- END DEBUG MENU EVENT LISTENERS ---
+        }
+        // --- END DEBUG MENU FUNCTIONS ---
 
         // --- FIREBALL COOLDOWN TIMER DISPLAY ---
         /**
@@ -794,6 +1022,18 @@
             shopOverlay.style.display = 'none';
             fireballCooldownTimerDisplay.style.display = 'none'; // Hide timer at start
             shopButton.style.display = 'block'; // Ensure shop button is visible
+            
+            // Show/hide debug button based on the toggle
+            if (DEBUG_MODE_ENABLED) {
+                debugButton.style.display = 'block';
+            } else {
+                // If not enabled, make sure it's hidden from the start
+                const htmlDebugButton = document.getElementById('debug-button');
+                if (htmlDebugButton) htmlDebugButton.style.display = 'none';
+                const htmlDebugOverlay = document.getElementById('debug-overlay');
+                if (htmlDebugOverlay) htmlDebugOverlay.style.display = 'none';
+            }
+
             gameActive = true;
             gamePaused = false;
             currentGnomeSpawnInterval = gnomeDefaults.spawnInterval;
@@ -818,6 +1058,7 @@
             finalScoreDisplay.textContent = `Your Final Score: ${playerScore}`;
             gameOverScreen.style.display = 'flex';
             shopButton.style.display = 'none'; // Hide shop button on game over
+            if (DEBUG_MODE_ENABLED) debugButton.style.display = 'none'; // Hide debug button on game over
             fireballCooldownTimerDisplay.style.display = 'none'; // Hide timer on game over
             // Cancel the animation frame when the game ends
             if (animationFrameId) {
@@ -872,6 +1113,56 @@
         buySpeedUpgradeButton.addEventListener('click', () => buyUpgrade('speed'));
         buyFireballUpgradeButton.addEventListener('click', () => buyUpgrade('fireball'));
         buyExtraLifeButton.addEventListener('click', () => buyUpgrade('extraLife'));
+
+
+        // Attach debug event listeners only if DEBUG_MODE_ENABLED is true
+        if (DEBUG_MODE_ENABLED) {
+            debugButton.addEventListener('click', openDebug);
+            closeDebugButton.addEventListener('click', closeDebug);
+
+            debugPlayerSpeedInput.addEventListener('input', (e) => {
+                player.speed = parseFloat(e.target.value);
+                debugPlayerSpeedValue.textContent = player.speed;
+            });
+
+            debugPlayerLivesInput.addEventListener('change', (e) => {
+                playerLives = parseInt(e.target.value);
+                updateLives(0);
+            });
+            addLifeButton.addEventListener('click', () => {
+                updateLives(1);
+                debugPlayerLivesInput.value = playerLives;
+            });
+
+            debugPlayerMoneyInput.addEventListener('change', (e) => {
+                playerMoney = parseInt(e.target.value);
+                updateMoney(0);
+            });
+            addMoneyButton.addEventListener('click', () => {
+                updateMoney(10);
+                debugPlayerMoneyInput.value = playerMoney;
+            });
+
+            debugGnomeSpeedInput.addEventListener('input', (e) => {
+                gnomeDefaults.speedMultiplier = parseFloat(e.target.value);
+                debugGnomeSpeedValue.textContent = gnomeDefaults.speedMultiplier;
+            });
+
+            debugGnomeSpawnIntervalInput.addEventListener('input', (e) => {
+                gnomeDefaults.spawnInterval = parseInt(e.target.value);
+                currentGnomeSpawnInterval = gnomeDefaults.spawnInterval;
+                debugGnomeSpawnIntervalValue.textContent = gnomeDefaults.spawnInterval;
+            });
+
+            debugGnomeMinSpawnIntervalInput.addEventListener('input', (e) => {
+                gnomeDefaults.minSpawnInterval = parseInt(e.target.value);
+                debugGnomeMinSpawnIntervalValue.textContent = gnomeDefaults.minSpawnInterval;
+            });
+
+            spawnGnomeButton.addEventListener('click', () => {
+                spawnGnome();
+            });
+        }
 
 
         // Start the game when the window loads
