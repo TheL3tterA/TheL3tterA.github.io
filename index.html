@@ -346,8 +346,13 @@
     <script>
         // === DEBUG TOGGLE ===
         // Set this to `true` to enable the debug menu, `false` to disable it.
-        const DEBUG_MODE_ENABLED = false;
+        const DEBUG_MODE_ENABLED = true;
         // ====================
+
+        // Game constants for difficulty scaling
+        const INITIAL_GNOME_SPEED_MULTIPLIER = 0.9; // Slightly faster from the start
+        const MAX_SPEED_INCREASE_PERCENTAGE = 0.75; // 75% increase from initial speed (for 175% total)
+        const SCORE_FOR_MAX_SPEED = 1500; // Score at which gnomes reach max speed
 
         // Get the canvas element and its 2D rendering context
         const canvas = document.getElementById('gameCanvas');
@@ -441,8 +446,8 @@
         const gnomeDefaults = {
             width: 45,
             height: 70,
-            speedMultiplier: 0.7,
-            spawnInterval: 3000, // Increased initial spawn interval
+            speedMultiplier: INITIAL_GNOME_SPEED_MULTIPLIER, // Set initial speed
+            spawnInterval: 2400, // Increased spawn frequency (was 3000ms, now 2400ms for 20% more frequent)
             minSpawnInterval: 500 // ms
         };
 
@@ -598,12 +603,16 @@
         function spawnGnome() {
             if (!gameActive || gamePaused) return; // Don't spawn if game is paused
 
+            // Calculate gnome speed based on score, capped at MAX_SPEED_INCREASE_PERCENTAGE
+            const speedIncreaseFactor = Math.min(1, playerScore / SCORE_FOR_MAX_SPEED);
+            const currentGnomeSpeed = gnomeDefaults.speedMultiplier * (1 + speedIncreaseFactor * MAX_SPEED_INCREASE_PERCENTAGE);
+
             const newGnome = {
                 x: Math.random() * (GAME_WIDTH - gnomeDefaults.width),
                 y: -gnomeDefaults.height,
                 width: gnomeDefaults.width,
                 height: gnomeDefaults.height,
-                speed: (1 + playerScore / 150) * gnomeDefaults.speedMultiplier,
+                speed: currentGnomeSpeed, // Use the calculated speed
                 kicked: false,
                 kickedTimer: 0
             };
@@ -969,7 +978,6 @@
             spawnGnomeButton.addEventListener('click', () => {
                 spawnGnome();
             });
-            // --- END DEBUG MENU EVENT LISTENERS ---
         }
         // --- END DEBUG MENU FUNCTIONS ---
 
